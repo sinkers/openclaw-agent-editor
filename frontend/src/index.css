@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+  }
+}
+
+/* Markdown editor dark mode styles */
+.w-md-editor {
+  @apply !bg-slate-800 !border-slate-700 !text-slate-100;
+}
+
+.w-md-editor-toolbar {
+  @apply !bg-slate-900 !border-slate-700;
+}
+
+.w-md-editor-toolbar button {
+  @apply !text-slate-300 hover:!text-slate-100;
+}
+
+.w-md-editor-text-pre,
+.w-md-editor-text-input {
+  @apply !text-slate-100;
+}
+
+.w-md-editor-preview {
+  @apply !bg-slate-800 !text-slate-100;
+}
+
+.wmde-markdown {
+  @apply !bg-slate-800 !text-slate-100;
+}
+
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3,
+.wmde-markdown h4,
+.wmde-markdown h5,
+.wmde-markdown h6 {
+  @apply !text-slate-100 !border-slate-700;
+}
+
+.wmde-markdown code {
+  @apply !bg-slate-900 !text-blue-300;
+}
+
+.wmde-markdown pre {
+  @apply !bg-slate-900;
+}
+
+.wmde-markdown blockquote {
+  @apply !border-slate-600 !text-slate-300;
+}
+
+.wmde-markdown a {
+  @apply !text-blue-400 hover:!text-blue-300;
+}
