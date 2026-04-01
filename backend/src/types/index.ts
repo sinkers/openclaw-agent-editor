@@ -20,9 +20,13 @@ export interface FileContent {
 
 export interface OpenClawConfig {
   agents: {
+    defaults?: {
+      workspace?: string;
+    };
     list: Array<{
       id: string;
       name?: string;
+      workspace?: string;
     }>;
   };
 }

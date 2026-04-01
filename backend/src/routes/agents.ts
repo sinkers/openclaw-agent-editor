@@ -41,7 +41,7 @@ router.get('/:agentId', asyncHandler(async (req: Request, res: Response) => {
 
   try {
     const agent = await configService.getAgent(agentId);
-    const files = await fileService.listFiles(agentId);
+    const files = await fileService.listFiles(agent.workspacePath);
 
     res.json({
       agent,
@@ -66,7 +66,8 @@ router.get(
     const { agentId, fileName } = req.params;
 
     try {
-      const fileContent = await fileService.readFile(agentId, fileName);
+      const agent = await configService.getAgent(agentId);
+      const fileContent = await fileService.readFile(agent.workspacePath, fileName);
       res.json(fileContent);
     } catch (error) {
       const apiError: ApiError = {
@@ -98,7 +99,8 @@ router.put(
     }
 
     try {
-      await fileService.writeFile(agentId, fileName, content);
+      const agent = await configService.getAgent(agentId);
+      await fileService.writeFile(agent.workspacePath, fileName, content);
       res.json({
         success: true,
         message: 'File saved successfully',
