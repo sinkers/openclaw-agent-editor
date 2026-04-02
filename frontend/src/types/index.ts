@@ -18,13 +18,22 @@ export interface FileContent {
   lastModified: string;
 }
 
+export interface SkillMissing {
+  bins: string[];
+  anyBins: string[];
+  env: string[];
+  config: string[];
+  os: string[];
+}
+
 export interface Skill {
   name: string;
   description: string;
   emoji?: string;
   source: string;
   eligible: boolean;
-  missing: boolean;
+  disabled: boolean;
+  missing: SkillMissing;
 }
 
 export interface Plugin {

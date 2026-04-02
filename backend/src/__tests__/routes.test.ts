@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 
 const mockSkills = [
-  { name: 'test-skill', description: 'A test', source: 'openclaw-bundled', eligible: true, missing: false },
+  { name: 'test-skill', description: 'A test', source: 'openclaw-bundled', eligible: true, disabled: false, missing: { bins: [], anyBins: [], env: [], config: [], os: [] } },
 ];
 const mockPlugins = [
   { id: 'acpx', name: 'ACPX Runtime', description: 'desc', version: '1.0', origin: 'bundled', enabled: false, status: 'disabled', toolNames: [], hookNames: [], channelIds: [] },

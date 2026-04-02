@@ -43,8 +43,8 @@ describe('CliService', () => {
     it('parses skills from CLI output', async () => {
       const skillsOutput = {
         skills: [
-          { name: 'test-skill', description: 'A test skill', source: 'openclaw-bundled', eligible: true, missing: false },
-          { name: 'other-skill', description: 'Another skill', emoji: '🛠', source: 'openclaw-workspace', eligible: false, missing: true },
+          { name: 'test-skill', description: 'A test skill', source: 'openclaw-bundled', eligible: true, disabled: false, missing: { bins: [], anyBins: [], env: [], config: [], os: [] } },
+          { name: 'other-skill', description: 'Another skill', emoji: '🛠', source: 'openclaw-workspace', eligible: false, disabled: false, missing: { bins: ['some-cli'], anyBins: [], env: [], config: [], os: [] } },
         ],
       };
       mockSuccess(JSON.stringify(skillsOutput));

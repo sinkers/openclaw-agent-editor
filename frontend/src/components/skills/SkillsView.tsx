@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../api/client';
-import type { Skill, Plugin, ClawhubSkill } from '../../types';
+import type { Skill, SkillMissing, Plugin, ClawhubSkill } from '../../types';
 
 interface SkillsViewProps {
   agentId: string;
@@ -59,6 +59,10 @@ function InstalledSkillsTab() {
       s.description.toLowerCase().includes(search.toLowerCase())
   );
 
+  const hasMissingDeps = (s: Skill) =>
+    s.missing.bins.length > 0 || s.missing.env.length > 0 ||
+    s.missing.config.length > 0 || s.missing.anyBins.length > 0;
+
   const workspace = filtered.filter((s) => s.source === 'openclaw-workspace');
   const bundled = filtered.filter((s) => s.source !== 'openclaw-workspace');
 
@@ -82,12 +86,12 @@ function InstalledSkillsTab() {
 
       {workspace.length > 0 && (
         <Section title="Agent Workspace Skills">
-          {workspace.map((s) => <SkillCard key={s.name} skill={s} />)}
+          {workspace.map((s) => <SkillCard key={s.name} skill={s} hasMissingDeps={hasMissingDeps(s)} />)}
         </Section>
       )}
       {bundled.length > 0 && (
         <Section title="System Skills (bundled/managed)">
-          {bundled.map((s) => <SkillCard key={s.name} skill={s} />)}
+          {bundled.map((s) => <SkillCard key={s.name} skill={s} hasMissingDeps={hasMissingDeps(s)} />)}
         </Section>
       )}
       {filtered.length === 0 && <EmptyState message="No skills found." />}
@@ -270,20 +274,57 @@ function PluginsTab() {
   );
 }
 
-function SkillCard({ skill }: { skill: Skill }) {
+function SkillCard({ skill, hasMissingDeps }: { skill: Skill; hasMissingDeps: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <div className="bg-slate-800 rounded-lg p-4 flex items-start gap-3">
-      {skill.emoji && <span className="text-2xl mt-0.5">{skill.emoji}</span>}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-100 font-medium text-sm">{skill.name}</span>
-          <SourceBadge source={skill.source} />
-          {skill.missing && <span className="px-1.5 py-0.5 text-xs rounded bg-yellow-900 text-yellow-300">missing deps</span>}
+    <div className="bg-slate-800 rounded-lg p-4">
+      <div className="flex items-start gap-3">
+        {skill.emoji && <span className="text-2xl mt-0.5">{skill.emoji}</span>}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-slate-100 font-medium text-sm">{skill.name}</span>
+            <SourceBadge source={skill.source} />
+            {hasMissingDeps && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="px-1.5 py-0.5 text-xs rounded bg-yellow-900 text-yellow-300 hover:bg-yellow-800 transition-colors"
+              >
+                missing deps {expanded ? '▲' : '▼'}
+              </button>
+            )}
+          </div>
+          <p className="text-slate-400 text-sm mt-1 line-clamp-2">{skill.description}</p>
         </div>
-        <p className="text-slate-400 text-sm mt-1 line-clamp-2">{skill.description}</p>
+        {!hasMissingDeps && (
+          <span className="flex-shrink-0 px-2 py-1 text-xs font-medium bg-green-900 text-green-300 rounded mt-0.5">Active</span>
+        )}
       </div>
-      {!skill.missing && (
-        <span className="flex-shrink-0 px-2 py-1 text-xs font-medium bg-green-900 text-green-300 rounded mt-0.5">Active</span>
+
+      {expanded && hasMissingDeps && (
+        <MissingDepsList missing={skill.missing} />
+      )}
+    </div>
+  );
+}
+
+function MissingDepsList({ missing }: { missing: SkillMissing }) {
+  return (
+    <div className="mt-3 ml-9 space-y-1 text-xs text-yellow-200/80 bg-yellow-950/30 rounded p-2.5">
+      {missing.bins.length > 0 && (
+        <div><span className="text-yellow-400 font-medium">CLI tools needed:</span> {missing.bins.map(b => <code key={b} className="mx-1 px-1 bg-slate-700 rounded">{b}</code>)}</div>
+      )}
+      {missing.anyBins.length > 0 && (
+        <div><span className="text-yellow-400 font-medium">One of these CLI tools:</span> {missing.anyBins.map(b => <code key={b} className="mx-1 px-1 bg-slate-700 rounded">{b}</code>)}</div>
+      )}
+      {missing.env.length > 0 && (
+        <div><span className="text-yellow-400 font-medium">Env vars needed:</span> {missing.env.map(e => <code key={e} className="mx-1 px-1 bg-slate-700 rounded">{e}</code>)}</div>
+      )}
+      {missing.config.length > 0 && (
+        <div><span className="text-yellow-400 font-medium">Config keys needed:</span> {missing.config.map(c => <code key={c} className="mx-1 px-1 bg-slate-700 rounded">{c}</code>)}</div>
+      )}
+      {missing.os.length > 0 && (
+        <div><span className="text-yellow-400 font-medium">OS requirement:</span> {missing.os.join(', ')}</div>
       )}
     </div>
   );
