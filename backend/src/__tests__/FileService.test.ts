@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, writeFile, mkdir } from 'fs/promises';
+import { mkdtemp, rm, writeFile, mkdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { FileService } from '../services/FileService.js';
@@ -71,8 +71,7 @@ describe('FileService', () => {
       await service.writeFile(workspacePath, 'TOOLS.md', 'original');
       await service.writeFile(workspacePath, 'TOOLS.md', 'updated');
 
-      const { readFile: fsReadFile } = await import('fs/promises');
-      const backup = await fsReadFile(join(workspacePath, 'TOOLS.md.bak'), 'utf-8');
+      const backup = await readFile(join(workspacePath, 'TOOLS.md.bak'), 'utf-8');
       expect(backup).toBe('original');
     });
 
