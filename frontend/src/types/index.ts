@@ -40,6 +40,12 @@ export interface Plugin {
   channelIds: string[];
 }
 
+export interface ClawhubSkill {
+  slug: string;
+  name: string;
+  score: number;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;

@@ -1,10 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { apiClient } from '../../api/client';
 import type { ChatMessage } from '../../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+interface MessageEntry extends ChatMessage {
+  id: string;
+}
+
+let msgCounter = 0;
+const nextId = () => `msg-${++msgCounter}`;
 
 export function ChatPanel() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<MessageEntry[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,30 +25,21 @@ export function ChatPanel() {
     const text = input.trim();
     if (!text || streaming) return;
 
-    const userMsg: ChatMessage = { role: 'user', content: text };
-    const nextMessages = [...messages, userMsg];
+    const userEntry: MessageEntry = { id: nextId(), role: 'user', content: text };
+    const nextMessages = [...messages, userEntry];
     setMessages(nextMessages);
     setInput('');
     setError(null);
     setStreaming(true);
 
-    const assistantMsg: ChatMessage = { role: 'assistant', content: '' };
-    setMessages((prev) => [...prev, assistantMsg]);
+    const assistantId = nextId();
+    setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
     abortRef.current = new AbortController();
 
     try {
-      const response = await fetch(`${API_BASE}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages }),
-        signal: abortRef.current.signal,
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Chat failed');
-      }
+      const apiMessages: ChatMessage[] = nextMessages.map(({ role, content }) => ({ role, content }));
+      const response = await apiClient.chatStream(apiMessages, abortRef.current.signal);
 
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No response body');
@@ -69,14 +66,11 @@ export function ChatPanel() {
             };
             const delta = parsed.choices?.[0]?.delta?.content;
             if (delta) {
-              setMessages((prev) => {
-                const updated = [...prev];
-                const last = updated[updated.length - 1];
-                if (last.role === 'assistant') {
-                  updated[updated.length - 1] = { ...last, content: last.content + delta };
-                }
-                return updated;
-              });
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, content: m.content + delta } : m
+                )
+              );
             }
           } catch {
             // non-JSON SSE line, skip
@@ -86,10 +80,10 @@ export function ChatPanel() {
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
       setError((err as Error).message);
-      // Remove empty assistant message on error
+      // Remove empty assistant placeholder on error
       setMessages((prev) => {
         const last = prev[prev.length - 1];
-        if (last?.role === 'assistant' && last.content === '') {
+        if (last?.id === assistantId && last.content === '') {
           return prev.slice(0, -1);
         }
         return prev;
@@ -113,12 +107,6 @@ export function ChatPanel() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="bg-slate-900 border-b border-slate-800 p-4">
-        <h2 className="text-xl font-semibold text-slate-100">Chat</h2>
-        <p className="text-sm text-slate-400 mt-1">Chat with your OpenClaw agent</p>
-      </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
@@ -126,8 +114,8 @@ export function ChatPanel() {
             Send a message to start chatting with your agent.
           </div>
         )}
-        {messages.map((msg, i) => (
-          <MessageBubble key={i} message={msg} />
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} />
         ))}
         {error && (
           <div className="text-red-400 text-sm bg-red-900/20 rounded p-3">{error}</div>
@@ -169,7 +157,7 @@ export function ChatPanel() {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message }: { message: MessageEntry }) {
   const isUser = message.role === 'user';
 
   return (

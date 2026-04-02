@@ -4,16 +4,19 @@ import { request as httpRequest } from 'http';
 import type { ConfigService } from './ConfigService.js';
 import type { ChatMessage } from '../types/index.js';
 
+const DEFAULT_GATEWAY_PORT = 18789;
+const GATEWAY_MODEL = 'openclaw';
+
 export class ChatService {
   constructor(private configService: ConfigService) {}
 
   async streamChat(messages: ChatMessage[], res: Response): Promise<void> {
     const config = await this.configService.getRawConfig();
-    const port = config.gateway?.port ?? 18789;
+    const port = config.gateway?.port ?? DEFAULT_GATEWAY_PORT;
     const token = config.gateway?.auth?.token ?? '';
 
     const body = JSON.stringify({
-      model: 'openclaw',
+      model: GATEWAY_MODEL,
       messages,
       stream: true,
     });

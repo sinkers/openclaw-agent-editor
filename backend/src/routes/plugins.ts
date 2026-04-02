@@ -1,19 +1,9 @@
 import { Router, type Request, type Response } from 'express';
 import { CliService } from '../services/CliService.js';
-import type { ApiError } from '../types/index.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 const cliService = new CliService();
-
-const asyncHandler = (fn: (req: Request, res: Response) => Promise<void>) => {
-  return (req: Request, res: Response) => {
-    fn(req, res).catch((error: Error) => {
-      console.error('API Error:', error);
-      const apiError: ApiError = { error: error.message, code: 'INTERNAL_ERROR' };
-      res.status(500).json(apiError);
-    });
-  };
-};
 
 /**
  * GET /api/plugins

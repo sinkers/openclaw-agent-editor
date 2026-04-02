@@ -95,13 +95,34 @@ describe('CliService', () => {
     });
   });
 
-  describe('installSkill', () => {
-    it('calls openclaw skills install with the skill name', async () => {
+  describe('searchClawhub', () => {
+    it('parses clawhub search results from CLI output', async () => {
+      const cliOutput = '- Searching\nmonitor-skill  Monitor Skill  (3.586)\nauto-monitor  Auto Monitor  (3.500)\n';
+      mockSuccess(cliOutput);
+
+      const results = await service.searchClawhub('monitor', 10);
+
+      expect(mockExecFile).toHaveBeenCalledWith('npx', ['clawhub@latest', 'search', 'monitor', '--limit', '10', '--no-input'], expect.any(Object), expect.any(Function));
+      expect(results).toHaveLength(2);
+      expect(results[0].slug).toBe('monitor-skill');
+      expect(results[0].name).toBe('Monitor Skill');
+      expect(results[0].score).toBeCloseTo(3.586);
+    });
+
+    it('returns empty array when no results', async () => {
+      mockSuccess('- Searching\n');
+      const results = await service.searchClawhub('nonexistent');
+      expect(results).toHaveLength(0);
+    });
+  });
+
+  describe('installSkillFromClawhub', () => {
+    it('calls npx clawhub install with slug and workdir', async () => {
       mockSuccess('');
 
-      await service.installSkill('my-skill');
+      await service.installSkillFromClawhub('monitor-skill', '/path/to/workspace');
 
-      expect(mockExecFile).toHaveBeenCalledWith('openclaw', ['skills', 'install', 'my-skill'], expect.any(Object), expect.any(Function));
+      expect(mockExecFile).toHaveBeenCalledWith('npx', ['clawhub@latest', 'install', 'monitor-skill', '--workdir', '/path/to/workspace', '--no-input'], expect.any(Object), expect.any(Function));
     });
   });
 

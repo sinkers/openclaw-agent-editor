@@ -3,6 +3,18 @@ import { ChatService } from '../services/ChatService.js';
 import { ConfigService } from '../services/ConfigService.js';
 import type { ApiError, ChatMessage } from '../types/index.js';
 
+const VALID_ROLES = new Set<ChatMessage['role']>(['user', 'assistant', 'system']);
+
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (typeof value !== 'object' || value === null) return false;
+  const msg = value as Record<string, unknown>;
+  return (
+    typeof msg.content === 'string' &&
+    typeof msg.role === 'string' &&
+    VALID_ROLES.has(msg.role as ChatMessage['role'])
+  );
+}
+
 const router = Router();
 const configService = new ConfigService();
 const chatService = new ChatService(configService);
@@ -29,8 +41,7 @@ router.post('/', async (req: Request, res: Response) => {
     if (
       typeof msg !== 'object' ||
       msg === null ||
-      !['user', 'assistant', 'system'].includes((msg as ChatMessage).role) ||
-      typeof (msg as ChatMessage).content !== 'string'
+      !isChatMessage(msg)
     ) {
       const apiError: ApiError = {
         error: 'Each message must have a valid role and string content',
