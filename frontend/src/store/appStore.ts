@@ -60,7 +60,8 @@ export const useAppStore = create<AppState>()(
       clearDraft: (agentId, fileName) => {
         const key = `${agentId}:${fileName}`;
         set((state) => {
-          const { [key]: _, ...rest } = state.drafts;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [key]: _removed, ...rest } = state.drafts;
           return { drafts: rest };
         });
       },

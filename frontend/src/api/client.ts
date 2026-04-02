@@ -1,4 +1,4 @@
-import type { Agent, FileInfo, FileContent, ApiError } from '../types';
+import type { Agent, FileInfo, FileContent, ApiError, Skill, Plugin, ClawhubSkill, ChatMessage } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -48,6 +48,63 @@ class ApiClient {
 
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     return this.fetch<{ status: string; timestamp: string }>('/health');
+  }
+
+  async getSkills(): Promise<{ skills: Skill[] }> {
+    return this.fetch<{ skills: Skill[] }>('/skills');
+  }
+
+  async searchClawhub(query: string, limit = 20): Promise<{ results: ClawhubSkill[] }> {
+    return this.fetch<{ results: ClawhubSkill[] }>(
+      `/skills/search?q=${encodeURIComponent(query)}&limit=${limit}`
+    );
+  }
+
+  async installSkillFromClawhub(
+    agentId: string,
+    slug: string
+  ): Promise<{ success: boolean; message: string }> {
+    return this.fetch<{ success: boolean; message: string }>(
+      `/skills/${encodeURIComponent(agentId)}/install/${encodeURIComponent(slug)}`,
+      { method: 'POST' }
+    );
+  }
+
+  async getPlugins(): Promise<{ plugins: Plugin[] }> {
+    return this.fetch<{ plugins: Plugin[] }>('/plugins');
+  }
+
+  async enablePlugin(id: string): Promise<{ success: boolean; message: string }> {
+    return this.fetch<{ success: boolean; message: string }>(`/plugins/${encodeURIComponent(id)}/enable`, {
+      method: 'POST',
+    });
+  }
+
+  async disablePlugin(id: string): Promise<{ success: boolean; message: string }> {
+    return this.fetch<{ success: boolean; message: string }>(`/plugins/${encodeURIComponent(id)}/disable`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Stream a chat response from the gateway.
+   * Returns a raw Response so the caller can consume the SSE stream.
+   * Pass an AbortSignal to cancel mid-stream.
+   */
+  async chatStream(messages: ChatMessage[], signal?: AbortSignal): Promise<globalThis.Response> {
+    const response = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+      signal,
+    });
+
+    if (!response.ok) {
+      const error: ApiError = await response.json();
+      throw new Error(error.error || 'Chat request failed');
+    }
+
+    return response;
   }
 }
 

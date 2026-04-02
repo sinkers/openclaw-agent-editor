@@ -74,6 +74,13 @@ export class ConfigService {
   }
 
   /**
+   * Return the raw parsed config (for gateway settings etc.)
+   */
+  async getRawConfig(): Promise<OpenClawConfig> {
+    return this.parseOpenClawConfig();
+  }
+
+  /**
    * Clear cached config (useful for testing or when config changes)
    */
   clearCache(): void {

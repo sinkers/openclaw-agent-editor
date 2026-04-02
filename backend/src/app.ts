@@ -1,6 +1,9 @@
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import agentsRouter from './routes/agents.js';
+import skillsRouter from './routes/skills.js';
+import pluginsRouter from './routes/plugins.js';
+import chatRouter from './routes/chat.js';
 
 const app = express();
 
@@ -28,6 +31,9 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // API routes
 app.use('/api/agents', agentsRouter);
+app.use('/api/skills', skillsRouter);
+app.use('/api/plugins', pluginsRouter);
+app.use('/api/chat', chatRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
