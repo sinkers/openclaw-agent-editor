@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useInstanceStore, type Instance } from '../../store/instanceStore';
 
 export function InstanceSelector() {
@@ -146,7 +146,10 @@ function InstanceManager({ instances, onAdd, onRemove, onUpdate, onClose }: Inst
         </div>
 
         <div className="p-5 border-t border-slate-800 space-y-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Add Instance</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Add Instance</p>
+            <InstallHelpButton />
+          </div>
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -169,6 +172,83 @@ function InstanceManager({ instances, onAdd, onRemove, onUpdate, onClose }: Inst
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+const INSTALL_SCRIPT_URL =
+  'https://raw.githubusercontent.com/YOUR_ORG/openclaw-agent-editor/main/install.sh';
+
+function InstallHelpButton() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+        title="How to install on another machine"
+      >
+        <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-blue-500 text-blue-400 text-[10px] font-bold">?</span>
+        How to install
+      </button>
+
+      {open && (
+        <div className="absolute right-0 bottom-7 w-80 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 z-10 space-y-3 text-xs text-slate-300">
+          <p className="font-semibold text-slate-100">Installing the backend on another machine</p>
+
+          <div className="space-y-1">
+            <p className="text-slate-400 font-medium">Option 1 — One-liner install script</p>
+            <p>Run this on the remote machine (requires Node ≥18 and git):</p>
+            <pre className="bg-slate-900 rounded p-2 text-green-300 text-[11px] leading-relaxed whitespace-pre-wrap break-all select-all">
+{`curl -fsSL ${INSTALL_SCRIPT_URL} | bash`}
+            </pre>
+            <p className="text-slate-400">
+              With options (custom port / CORS):
+            </p>
+            <pre className="bg-slate-900 rounded p-2 text-green-300 text-[11px] leading-relaxed whitespace-pre-wrap break-all select-all">
+{`curl -fsSL ${INSTALL_SCRIPT_URL} | bash -s -- \\
+  --port 3001 \\
+  --cors-origins "http://YOUR-LAPTOP:5173"`}
+            </pre>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-slate-400 font-medium">Option 2 — Ask your OpenClaw agent</p>
+            <p>In the Chat tab, send:</p>
+            <pre className="bg-slate-900 rounded p-2 text-yellow-200 text-[11px] leading-relaxed whitespace-pre-wrap select-all">
+{`Install the openclaw-agent-editor backend on this machine.
+Run: curl -fsSL ${INSTALL_SCRIPT_URL} | bash`}
+            </pre>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-slate-400 font-medium">Option 3 — Docker</p>
+            <pre className="bg-slate-900 rounded p-2 text-green-300 text-[11px] leading-relaxed whitespace-pre-wrap break-all select-all">
+{`git clone https://github.com/YOUR_ORG/openclaw-agent-editor
+cd openclaw-agent-editor
+docker compose up -d`}
+            </pre>
+          </div>
+
+          <p className="text-slate-500 text-[11px]">
+            Then add the machine's IP and port 3001 as the URL above.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
