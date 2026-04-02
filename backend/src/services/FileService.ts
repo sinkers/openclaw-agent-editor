@@ -105,6 +105,41 @@ export class FileService {
   }
 
   /**
+   * Export all files for an agent as a bundle object
+   */
+  async exportAgent(workspacePath: string): Promise<Record<string, string>> {
+    const bundle: Record<string, string> = {};
+    await Promise.all(
+      ALLOWED_FILES.map(async (fileName) => {
+        const filePath = join(workspacePath, fileName);
+        try {
+          const content = await readFile(filePath, 'utf-8');
+          bundle[fileName] = content;
+        } catch {
+          // Skip files that don't exist
+        }
+      })
+    );
+    return bundle;
+  }
+
+  /**
+   * Import files from a bundle object, writing each file
+   */
+  async importAgent(workspacePath: string, bundle: Record<string, string>): Promise<string[]> {
+    const written: string[] = [];
+    await Promise.all(
+      ALLOWED_FILES.map(async (fileName) => {
+        if (typeof bundle[fileName] === 'string') {
+          await this.writeFile(workspacePath, fileName, bundle[fileName]);
+          written.push(fileName);
+        }
+      })
+    );
+    return written;
+  }
+
+  /**
    * Write content to a markdown file (creates backup first)
    */
   async writeFile(

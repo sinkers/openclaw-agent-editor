@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+    volumes:
+      # Mount the host ~/.openclaw directory so the backend reads real agent config
+      - "${HOME}/.openclaw:/root/.openclaw:ro"
+    restart: unless-stopped

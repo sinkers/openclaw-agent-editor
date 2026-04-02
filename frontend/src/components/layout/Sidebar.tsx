@@ -1,5 +1,6 @@
 import { AgentList } from '../agents/AgentList';
 import { ThemeToggle } from './ThemeToggle';
+import { InstanceSelector } from '../instances/InstanceSelector';
 
 export function Sidebar() {
   return (
@@ -8,7 +9,9 @@ export function Sidebar() {
         <h1 className="text-xl font-semibold text-slate-100">
           OpenClaw Editor
         </h1>
-        <p className="text-xs text-slate-400 mt-1">Agent Workspace Manager</p>
+        <div className="mt-2">
+          <InstanceSelector />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">

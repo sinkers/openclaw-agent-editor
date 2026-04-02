@@ -1,6 +1,23 @@
 import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 
+const mockBundle = {
+  'SOUL.md': '# Soul\nI am an agent.',
+  'IDENTITY.md': '# Identity\nWorkspace main.',
+};
+
+vi.mock('../services/FileService.js', () => ({
+  FileService: class {
+    listFiles() { return Promise.resolve([]); }
+    readFile() { return Promise.resolve({ fileName: 'SOUL.md', content: '', lastModified: new Date() }); }
+    writeFile() { return Promise.resolve(); }
+    exportAgent() { return Promise.resolve(mockBundle); }
+    importAgent(_path: string, files: Record<string, string>) {
+      return Promise.resolve(Object.keys(files).filter((k) => k.endsWith('.md')));
+    }
+  },
+}));
+
 const mockSkills = [
   { name: 'test-skill', description: 'A test', source: 'openclaw-bundled', eligible: true, disabled: false, missing: { bins: [], anyBins: [], env: [], config: [], os: [] } },
 ];
@@ -109,6 +126,55 @@ describe('POST /api/plugins/:id/disable', () => {
     const res = await request(app).post('/api/plugins/acpx/disable');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+  });
+});
+
+describe('GET /api/agents/:agentId/export', () => {
+  it('returns a bundle with agentId, exportedAt, and files', async () => {
+    const res = await request(app).get('/api/agents/agent-1/export');
+    expect(res.status).toBe(200);
+    expect(res.body.agentId).toBe('agent-1');
+    expect(res.body.exportedAt).toBeTruthy();
+    expect(res.body.files).toEqual(mockBundle);
+  });
+
+  it('returns 404 for unknown agent', async () => {
+    const res = await request(app).get('/api/agents/nonexistent/export');
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('AGENT_NOT_FOUND');
+  });
+});
+
+describe('POST /api/agents/:agentId/import', () => {
+  it('imports files and returns written list', async () => {
+    const res = await request(app)
+      .post('/api/agents/agent-1/import')
+      .send({ files: { 'SOUL.md': '# Soul', 'IDENTITY.md': '# Id' } });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.written).toContain('SOUL.md');
+    expect(res.body.written).toContain('IDENTITY.md');
+  });
+
+  it('returns 400 when files field is missing', async () => {
+    const res = await request(app).post('/api/agents/agent-1/import').send({});
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_CONTENT');
+  });
+
+  it('returns 400 when files is an array', async () => {
+    const res = await request(app)
+      .post('/api/agents/agent-1/import')
+      .send({ files: ['SOUL.md'] });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_CONTENT');
+  });
+
+  it('returns 404 for unknown agent', async () => {
+    const res = await request(app)
+      .post('/api/agents/nonexistent/import')
+      .send({ files: { 'SOUL.md': '# Soul' } });
+    expect(res.status).toBe(404);
   });
 });
 
