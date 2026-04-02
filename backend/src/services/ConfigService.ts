@@ -47,11 +47,15 @@ export class ConfigService {
    */
   async getAgents(): Promise<Agent[]> {
     const config = await this.parseOpenClawConfig();
+    const defaultWorkspace = config.agents.defaults?.workspace;
 
     return config.agents.list.map(agent => ({
       id: agent.id,
       name: agent.name || agent.id,
-      workspacePath: join(this.openclawPath, `workspace-${agent.id}`),
+      workspacePath:
+        agent.workspace ??
+        defaultWorkspace ??
+        join(this.openclawPath, `workspace-${agent.id}`),
     }));
   }
 

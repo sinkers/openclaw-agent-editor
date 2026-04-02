@@ -1,16 +1,9 @@
 import { readFile, writeFile, stat, copyFile, mkdir } from 'fs/promises';
-import { join, basename, dirname } from 'path';
-import { homedir } from 'os';
+import { join, dirname } from 'path';
 import type { FileInfo, FileContent, AllowedFileName } from '../types/index.js';
 import { ALLOWED_FILES } from '../types/index.js';
 
 export class FileService {
-  private openclawPath: string;
-
-  constructor() {
-    this.openclawPath = join(homedir(), '.openclaw');
-  }
-
   /**
    * Validate that the filename is in the allowed list
    */
@@ -24,14 +17,11 @@ export class FileService {
   }
 
   /**
-   * Sanitize and validate file path to prevent directory traversal
+   * Resolve and validate file path to prevent directory traversal
    */
-  private getFilePath(agentId: string, fileName: string): string {
+  private getFilePath(workspacePath: string, fileName: string): string {
     this.validateFileName(fileName);
 
-    // Remove any path components from agentId (security)
-    const safeAgentId = basename(agentId);
-    const workspacePath = join(this.openclawPath, `workspace-${safeAgentId}`);
     const filePath = join(workspacePath, fileName);
 
     // Ensure the resolved path is still within the workspace
@@ -60,9 +50,7 @@ export class FileService {
   /**
    * List all markdown files for an agent
    */
-  async listFiles(agentId: string): Promise<FileInfo[]> {
-    const workspacePath = join(this.openclawPath, `workspace-${basename(agentId)}`);
-
+  async listFiles(workspacePath: string): Promise<FileInfo[]> {
     const fileInfos = await Promise.all(
       ALLOWED_FILES.map(async (fileName) => {
         const filePath = join(workspacePath, fileName);
@@ -91,8 +79,8 @@ export class FileService {
   /**
    * Read a markdown file
    */
-  async readFile(agentId: string, fileName: string): Promise<FileContent> {
-    const filePath = this.getFilePath(agentId, fileName);
+  async readFile(workspacePath: string, fileName: string): Promise<FileContent> {
+    const filePath = this.getFilePath(workspacePath, fileName);
 
     try {
       const content = await readFile(filePath, 'utf-8');
@@ -120,11 +108,11 @@ export class FileService {
    * Write content to a markdown file (creates backup first)
    */
   async writeFile(
-    agentId: string,
+    workspacePath: string,
     fileName: string,
     content: string
   ): Promise<void> {
-    const filePath = this.getFilePath(agentId, fileName);
+    const filePath = this.getFilePath(workspacePath, fileName);
 
     // Ensure workspace directory exists
     const workspaceDir = dirname(filePath);
