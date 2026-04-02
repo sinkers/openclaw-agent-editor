@@ -101,4 +101,90 @@ router.put(
   })
 );
 
+/**
+ * GET /api/agents/:agentId/export
+ * Export all agent markdown files as a JSON bundle
+ */
+router.get(
+  '/:agentId/export',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { agentId } = req.params;
+
+    let agent;
+    try {
+      agent = await configService.getAgent(agentId);
+    } catch (error) {
+      const apiError: ApiError = {
+        error: (error as Error).message,
+        code: 'AGENT_NOT_FOUND',
+      };
+      res.status(404).json(apiError);
+      return;
+    }
+
+    try {
+      const bundle = await fileService.exportAgent(agent.workspacePath);
+      res.json({
+        agentId,
+        exportedAt: new Date().toISOString(),
+        files: bundle,
+      });
+    } catch (error) {
+      const apiError: ApiError = {
+        error: (error as Error).message,
+        code: 'EXPORT_ERROR',
+      };
+      res.status(500).json(apiError);
+    }
+  })
+);
+
+/**
+ * POST /api/agents/:agentId/import
+ * Import agent markdown files from a JSON bundle
+ * Body: { files: Record<string, string> }
+ */
+router.post(
+  '/:agentId/import',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { agentId } = req.params;
+    const { files } = req.body as { files?: unknown };
+
+    if (!files || typeof files !== 'object' || Array.isArray(files)) {
+      const apiError: ApiError = {
+        error: 'Body must include "files" as an object mapping filename to content',
+        code: 'INVALID_CONTENT',
+      };
+      res.status(400).json(apiError);
+      return;
+    }
+
+    let agent;
+    try {
+      agent = await configService.getAgent(agentId);
+    } catch (error) {
+      const apiError: ApiError = {
+        error: (error as Error).message,
+        code: 'AGENT_NOT_FOUND',
+      };
+      res.status(404).json(apiError);
+      return;
+    }
+
+    try {
+      const written = await fileService.importAgent(
+        agent.workspacePath,
+        files as Record<string, string>
+      );
+      res.json({ success: true, written });
+    } catch (error) {
+      const apiError: ApiError = {
+        error: (error as Error).message,
+        code: 'IMPORT_ERROR',
+      };
+      res.status(400).json(apiError);
+    }
+  })
+);
+
 export default router;

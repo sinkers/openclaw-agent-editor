@@ -1,10 +1,13 @@
 import type { Agent, FileInfo, FileContent, ApiError, Skill, Plugin, ClawhubSkill, ChatMessage } from '../types';
+import { useInstanceStore } from '../store/instanceStore';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+function getApiBase(): string {
+  return useInstanceStore.getState().getActiveApiBase();
+}
 
 class ApiClient {
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const response = await fetch(`${getApiBase()}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -91,8 +94,27 @@ class ApiClient {
    * Returns a raw Response so the caller can consume the SSE stream.
    * Pass an AbortSignal to cancel mid-stream.
    */
+  async exportAgent(agentId: string): Promise<{ agentId: string; exportedAt: string; files: Record<string, string> }> {
+    return this.fetch<{ agentId: string; exportedAt: string; files: Record<string, string> }>(
+      `/agents/${encodeURIComponent(agentId)}/export`
+    );
+  }
+
+  async importAgent(
+    agentId: string,
+    files: Record<string, string>
+  ): Promise<{ success: boolean; written: string[] }> {
+    return this.fetch<{ success: boolean; written: string[] }>(
+      `/agents/${encodeURIComponent(agentId)}/import`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ files }),
+      }
+    );
+  }
+
   async chatStream(messages: ChatMessage[], signal?: AbortSignal): Promise<globalThis.Response> {
-    const response = await fetch(`${API_BASE}/chat`, {
+    const response = await fetch(`${getApiBase()}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages }),
