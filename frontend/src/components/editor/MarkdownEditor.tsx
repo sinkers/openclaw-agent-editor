@@ -12,7 +12,7 @@ interface MarkdownEditorProps {
 
 export function MarkdownEditor({ agentId, fileName }: MarkdownEditorProps) {
   const queryClient = useQueryClient();
-  const { getDraft, saveDraft, clearDraft, hasDraft } = useAppStore();
+  const { getDraft, saveDraft, clearDraft } = useAppStore();
 
   const [content, setContent] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -21,9 +21,7 @@ export function MarkdownEditor({ agentId, fileName }: MarkdownEditorProps) {
     message: string;
     type: 'success' | 'error';
   } | null>(null);
-  const [showRestoreDraft, setShowRestoreDraft] = useState(false);
-
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch file content
   const { data: fileData, isLoading } = useQuery({
@@ -49,19 +47,19 @@ export function MarkdownEditor({ agentId, fileName }: MarkdownEditorProps) {
     },
   });
 
-  // Initialize content from file or draft
+  // Derived: is there a draft different from the saved content?
+  const pendingDraft = fileData ? getDraft(agentId, fileName) : undefined;
+  const hasPendingDraft = !!(pendingDraft && fileData && pendingDraft !== fileData.content);
+
+  // Initialize content when file loads (only if no draft to restore)
   useEffect(() => {
-    if (fileData) {
-      const draft = getDraft(agentId, fileName);
-      if (draft && draft !== fileData.content) {
-        setShowRestoreDraft(true);
-      } else {
-        setContent(fileData.content);
-        setIsDirty(false);
-      }
+    if (fileData && !hasPendingDraft) {
+      setContent(fileData.content);
+      setIsDirty(false);
       setLastSaved(new Date(fileData.lastModified));
     }
-  }, [fileData, agentId, fileName, getDraft]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileData?.fileName, fileData?.lastModified]);
 
   // Auto-save draft every 5 seconds
   useEffect(() => {
@@ -110,12 +108,10 @@ export function MarkdownEditor({ agentId, fileName }: MarkdownEditorProps) {
 
   // Restore draft handler
   const handleRestoreDraft = () => {
-    const draft = getDraft(agentId, fileName);
-    if (draft) {
-      setContent(draft);
+    if (pendingDraft) {
+      setContent(pendingDraft);
       setIsDirty(true);
     }
-    setShowRestoreDraft(false);
   };
 
   const handleDiscardDraft = () => {
@@ -123,7 +119,6 @@ export function MarkdownEditor({ agentId, fileName }: MarkdownEditorProps) {
     if (fileData) {
       setContent(fileData.content);
     }
-    setShowRestoreDraft(false);
   };
 
   if (isLoading) {
@@ -140,7 +135,7 @@ export function MarkdownEditor({ agentId, fileName }: MarkdownEditorProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Restore Draft Banner */}
-      {showRestoreDraft && (
+      {hasPendingDraft && (
         <div className="bg-yellow-900/30 border-b border-yellow-700 px-4 py-2 flex items-center justify-between">
           <span className="text-sm text-yellow-200">
             You have an unsaved draft. Restore it?
