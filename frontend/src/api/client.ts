@@ -1,4 +1,4 @@
-import type { Agent, FileInfo, FileContent, ApiError } from '../types';
+import type { Agent, FileInfo, FileContent, ApiError, Skill, Plugin, ChatMessage } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -48,6 +48,51 @@ class ApiClient {
 
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     return this.fetch<{ status: string; timestamp: string }>('/health');
+  }
+
+  async getSkills(): Promise<{ skills: Skill[] }> {
+    return this.fetch<{ skills: Skill[] }>('/skills');
+  }
+
+  async installSkill(name: string): Promise<{ success: boolean; message: string }> {
+    return this.fetch<{ success: boolean; message: string }>(`/skills/${encodeURIComponent(name)}/install`, {
+      method: 'POST',
+    });
+  }
+
+  async getPlugins(): Promise<{ plugins: Plugin[] }> {
+    return this.fetch<{ plugins: Plugin[] }>('/plugins');
+  }
+
+  async enablePlugin(id: string): Promise<{ success: boolean; message: string }> {
+    return this.fetch<{ success: boolean; message: string }>(`/plugins/${encodeURIComponent(id)}/enable`, {
+      method: 'POST',
+    });
+  }
+
+  async disablePlugin(id: string): Promise<{ success: boolean; message: string }> {
+    return this.fetch<{ success: boolean; message: string }>(`/plugins/${encodeURIComponent(id)}/disable`, {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Stream a chat response from the gateway.
+   * Returns a raw Response so the caller can read the SSE stream.
+   */
+  async chatStream(messages: ChatMessage[]): Promise<Response> {
+    const response = await fetch(`${API_BASE}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+    });
+
+    if (!response.ok) {
+      const error: ApiError = await response.json();
+      throw new Error(error.error || 'Chat request failed');
+    }
+
+    return response;
   }
 }
 
