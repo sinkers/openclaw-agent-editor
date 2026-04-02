@@ -14,13 +14,9 @@ RUN npm ci
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 
-# Build backend
+# Build backend only — frontend is served separately (npm run dev:frontend or static hosting)
 RUN npm run build:backend
 
-# Build frontend (static assets served separately or via nginx)
-RUN npm run build:frontend
-
-# Production: only keep backend runtime deps
 WORKDIR /app/backend
 
 EXPOSE 3001

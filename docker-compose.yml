@@ -12,5 +12,5 @@ services:
       - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
     volumes:
       # Mount the host ~/.openclaw directory so the backend reads real agent config
-      - "${HOME}/.openclaw:/root/.openclaw:ro"
+      - "${HOME}/.openclaw:/root/.openclaw"
     restart: unless-stopped

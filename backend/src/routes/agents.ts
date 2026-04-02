@@ -109,8 +109,20 @@ router.get(
   '/:agentId/export',
   asyncHandler(async (req: Request, res: Response) => {
     const { agentId } = req.params;
+
+    let agent;
     try {
-      const agent = await configService.getAgent(agentId);
+      agent = await configService.getAgent(agentId);
+    } catch (error) {
+      const apiError: ApiError = {
+        error: (error as Error).message,
+        code: 'AGENT_NOT_FOUND',
+      };
+      res.status(404).json(apiError);
+      return;
+    }
+
+    try {
       const bundle = await fileService.exportAgent(agent.workspacePath);
       res.json({
         agentId,
@@ -120,9 +132,9 @@ router.get(
     } catch (error) {
       const apiError: ApiError = {
         error: (error as Error).message,
-        code: 'AGENT_NOT_FOUND',
+        code: 'EXPORT_ERROR',
       };
-      res.status(404).json(apiError);
+      res.status(500).json(apiError);
     }
   })
 );
