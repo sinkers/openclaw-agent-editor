@@ -2,7 +2,7 @@
 # OpenClaw Agent Editor — Remote Install Script
 #
 # Usage (one-liner from any machine):
-#   curl -fsSL https://raw.githubusercontent.com/YOUR_ORG/openclaw-agent-editor/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/sinkers/openclaw-agent-editor/main/install.sh | bash
 #
 # Or with options:
 #   curl -fsSL .../install.sh | bash -s -- --port 3001 --cors-origins "http://my-laptop:5173"
@@ -20,7 +20,7 @@ set -euo pipefail
 INSTALL_DIR="${INSTALL_DIR:-$HOME/openclaw-agent-editor}"
 PORT="${PORT:-3001}"
 CORS_ORIGINS="${CORS_ORIGINS:-http://localhost:5173}"
-REPO_URL="${REPO_URL:-https://github.com/YOUR_ORG/openclaw-agent-editor.git}"
+REPO_URL="${REPO_URL:-https://github.com/sinkers/openclaw-agent-editor.git}"
 SERVICE_NAME="openclaw-agent-editor"
 
 # ── Colour helpers ───────────────────────────────────────────────────────────

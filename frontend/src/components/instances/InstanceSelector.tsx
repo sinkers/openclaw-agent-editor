@@ -177,7 +177,7 @@ function InstanceManager({ instances, onAdd, onRemove, onUpdate, onClose }: Inst
 }
 
 const INSTALL_SCRIPT_URL =
-  'https://raw.githubusercontent.com/YOUR_ORG/openclaw-agent-editor/main/install.sh';
+  'https://raw.githubusercontent.com/sinkers/openclaw-agent-editor/main/install.sh';
 
 function InstallHelpButton() {
   const [open, setOpen] = useState(false);
@@ -238,7 +238,7 @@ Run: curl -fsSL ${INSTALL_SCRIPT_URL} | bash`}
           <div className="space-y-1">
             <p className="text-slate-400 font-medium">Option 3 — Docker</p>
             <pre className="bg-slate-900 rounded p-2 text-green-300 text-[11px] leading-relaxed whitespace-pre-wrap break-all select-all">
-{`git clone https://github.com/YOUR_ORG/openclaw-agent-editor
+{`git clone https://github.com/sinkers/openclaw-agent-editor
 cd openclaw-agent-editor
 docker compose up -d`}
             </pre>
